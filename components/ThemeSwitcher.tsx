@@ -54,7 +54,7 @@ export function ThemeSwitcher() {
 
   // Fixed positioning escapes the compact top-bar overflow strip, whose
   // horizontal scroller would otherwise clip the menu to its 48px height.
-  const menuPos = useFixedMenuPosition(open, triggerRef, isMobile ? 220 : 350);
+  const menuPos = useFixedMenuPosition(open, triggerRef, isMobile ? 220 : 350, isMobile ? 620 : 420);
   const menuShown = menuPos !== null;
 
   // Focus the active item once the positioned menu mounts, or when the highlight moves.
@@ -190,10 +190,10 @@ export function ThemeSwitcher() {
           className="dropdown-surface animate-slide-down"
           style={{
             position: "fixed",
-            top: menuPos.top,
-            left: menuPos.left,
+            ...menuPos,
+            overflowY: "auto",
             zIndex: 600,
-            minWidth: isMobile ? 220 : 350,
+            minWidth: 0,
             maxWidth: "calc(100vw / var(--ui-scale) - 16px)",
             margin: 0,
             padding: 6,

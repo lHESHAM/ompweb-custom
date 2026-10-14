@@ -56,7 +56,10 @@
     "systemd:stop": "node bin/omp-web-systemd.js stop",
     "systemd:status": "node bin/omp-web-systemd.js status",
     "prepack": "npm run build",
-    "release:check": "npm run typecheck && npm run lint && npm test && npm run build"
+    "release:check": "npm run typecheck && npm run lint && npm test && npm run build",
+    "predev": "node bin/check-upstream.mjs",
+    "predev:lan": "node bin/check-upstream.mjs",
+    "launch": "npm run dev"
   },
   "dependencies": {
     "@base-ui/react": "^1.7.0",

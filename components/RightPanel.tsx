@@ -172,7 +172,7 @@ export const RightPanel = memo(function RightPanel({
           onBlur={(e) => { e.currentTarget.style.background = "transparent"; }}
         />
       )}
-      {/* Right panel: file viewer — always mounted, width animated via CSS */}
+      {/* Right panel: file viewer — kept mounted to preserve loaded content and scroll */}
       <aside
         id="workspace-file-panel"
         ref={rightPanelRef}

@@ -48,12 +48,12 @@ export function ProjectLaunchConfigDialog({ projectPath, initialConfig, onClose,
 
   return (
     <Dialog open onOpenChange={(open) => { if (!open && !saving) onClose(); }}>
-      <DialogContent ariaLabel={t("projectLaunchConfig.dialogLabel")} style={{ width: "min(620px, calc(100vw - 16px))", padding: 0, overflow: "hidden" }}>
-        <div style={{ padding: "16px 18px 10px", borderBottom: "1px solid var(--border)" }}>
-          <DialogTitle style={{ margin: 0, fontSize: 18 }}>{t("projectLaunchConfig.title")}</DialogTitle>
+      <DialogContent className="app-form-dialog" ariaLabel={t("projectLaunchConfig.dialogLabel")} style={{ width: "min(620px, calc(100vw - 16px))", padding: 0, overflow: "hidden" }}>
+        <div style={{ padding: "24px 24px 12px" }}>
+          <DialogTitle style={{ margin: 0, fontSize: 22 }}>{t("projectLaunchConfig.title")}</DialogTitle>
           <div style={{ marginTop: 6, color: "var(--text-muted)", fontFamily: "var(--font-mono)", fontSize: 11, overflowWrap: "anywhere" }}>{projectPath}</div>
         </div>
-        <div style={{ display: "grid", gap: 12, padding: 18 }}>
+        <div style={{ display: "grid", gap: 16, padding: "0 24px 24px" }}>
           <label style={{ display: "grid", gap: 5, color: "var(--text-muted)", fontSize: 12 }}>
             <span>OMP Profile</span>
             <input value={profile} onChange={(event) => setProfile(event.target.value)} placeholder={t("projectLaunchConfig.profilePlaceholder")} disabled={saving} style={{ height: 34, padding: "0 9px", border: "1px solid var(--border)", borderRadius: "var(--radius-control)", background: "var(--bg-panel)", color: "var(--text)", fontFamily: "var(--font-mono)", fontSize: 12, outline: "none" }} />
@@ -71,7 +71,7 @@ export function ProjectLaunchConfigDialog({ projectPath, initialConfig, onClose,
           </div>
           {error && <div role="alert" style={{ color: "var(--status-error)", fontSize: 12, lineHeight: 1.4 }}>{error}</div>}
         </div>
-        <div style={{ display: "flex", justifyContent: "flex-end", gap: 8, padding: "10px 18px", borderTop: "1px solid var(--border)" }}>
+        <div style={{ display: "flex", justifyContent: "flex-end", gap: 8, padding: "8px 24px 24px" }}>
           <button type="button" onClick={onClose} disabled={saving} style={{ padding: "7px 13px", border: "1px solid var(--border)", borderRadius: "var(--radius-control)", background: "var(--bg-hover)", color: "var(--text-muted)", cursor: saving ? "default" : "pointer" }}>{t("projectLaunchConfig.cancel")}</button>
           <button type="button" onClick={() => void handleSave()} disabled={saving} style={{ padding: "7px 15px", border: 0, borderRadius: "var(--radius-control)", background: "var(--accent-strong)", color: "var(--on-accent)", cursor: saving ? "default" : "pointer", opacity: saving ? 0.65 : 1 }}>{saving ? t("projectLaunchConfig.saving") : t("projectLaunchConfig.save")}</button>
         </div>

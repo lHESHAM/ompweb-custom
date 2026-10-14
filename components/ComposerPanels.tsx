@@ -299,8 +299,9 @@ function SubagentsPanel({ subagents, onSelectSubagent, defaultExpanded = false }
  * via its header row (`chevron`); todo/subagents start collapsed (headers
  * always show live progress / running-summary), a new side question starts
  * expanded. Rendered pinned above the chat input. */
-export function ComposerPanels({ todoPhases, subagents, onSelectSubagent, btw = null, defaultExpanded = false }: {
+export function ComposerPanels({ todoPhases, activityText = null, subagents, onSelectSubagent, btw = null, defaultExpanded = false }: {
   todoPhases: TodoPhase[];
+  activityText?: string | null;
   subagents: SubagentInfo[];
   onSelectSubagent: (subagent: SubagentInfo) => void;
   btw?: BtwPanelProps | null;
@@ -314,6 +315,7 @@ export function ComposerPanels({ todoPhases, subagents, onSelectSubagent, btw = 
       {btw && <BtwPanel key={btw.record.id} {...btw} />}
       <TodoList
         phases={todoPhases}
+        activityText={activityText}
         collapsible
         defaultExpanded={defaultExpanded}
         collapsed={todoCollapsed}

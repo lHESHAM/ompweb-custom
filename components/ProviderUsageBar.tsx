@@ -96,6 +96,7 @@ export function ProviderUsageBar() {
 
   return (
     <section
+      className="provider-usage-bar"
       aria-label={t("appShell.sectionProviderUsage")}
       style={{
         display: "flex",
@@ -152,10 +153,11 @@ export function ProviderUsageBar() {
         <span aria-hidden="true" style={{ display: "flex", color: "var(--accent)", flexShrink: 0 }}>
           <Gauge size={13} strokeWidth={2} aria-hidden="true" />
         </span>
-        <span style={{ fontSize: 11, fontWeight: 700, letterSpacing: "0.05em", textTransform: "uppercase", color: "var(--text-muted)", overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>
+        <span className="provider-usage-summary">
+        <span className="provider-usage-title" style={{ fontSize: 11, fontWeight: 700, letterSpacing: "0.05em", textTransform: "uppercase", color: "var(--text-muted)", overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>
           {t("appShell.sectionProviderUsage")}
         </span>
-        <span style={{ marginLeft: "auto", fontSize: 10, fontFamily: "var(--font-mono)", color: worst ? usageTone(worst.percent) : "var(--text-dim)", fontWeight: 600, whiteSpace: "nowrap", flexShrink: 0 }}>
+        <span className="provider-usage-status" style={{ marginLeft: "auto", fontSize: 10, fontFamily: "var(--font-mono)", color: worst ? usageTone(worst.percent) : "var(--text-dim)", fontWeight: 600, whiteSpace: "nowrap", flexShrink: 0 }}>
           {loading && reports.length === 0
             ? t("appShell.providerUsageLoading")
             : error
@@ -163,6 +165,7 @@ export function ProviderUsageBar() {
               : worst
                 ? t("providerUsage.highest", { percent: worst.percent, window: worst.window })
                 : t("appShell.providerUsageNoData")}
+        </span>
         </span>
       </button>
         <Tooltip content={t("sessionSidebar.refresh")} side="top">

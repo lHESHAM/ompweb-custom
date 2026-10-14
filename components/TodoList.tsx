@@ -16,6 +16,8 @@ function TodoStatusIcon({ status }: { status: TodoItem["status"] }) {
 
 interface TodoListProps {
   phases?: TodoPhase[];
+  /** Live agent status shares the task header instead of a separate composer row. */
+  activityText?: string | null;
   /** Render as a composer-attached panel: the header row becomes a
    * collapse/expand toggle and the section margin is dropped. */
   collapsible?: boolean;
@@ -35,7 +37,7 @@ function previewTaskOrder(status: TodoItem["status"]): number {
   return 2;
 }
 
-export function TodoList({ phases = [], collapsible = false, defaultExpanded = false, collapsed: collapsedProp, onCollapsedChange }: TodoListProps) {
+export function TodoList({ phases = [], activityText = null, collapsible = false, defaultExpanded = false, collapsed: collapsedProp, onCollapsedChange }: TodoListProps) {
   const { t } = useI18n();
   const [expanded, setExpanded] = useState(false);
   const [collapsedState, setCollapsedState] = useState(collapsible ? !defaultExpanded : false);
@@ -65,6 +67,17 @@ export function TodoList({ phases = [], collapsible = false, defaultExpanded = f
   const headerRowClass = "flex items-center gap-2 px-3 py-2 text-xs text-text-muted";
   const headerBorderClass = collapsed ? "" : "border-b border-border";
   const progress = t("chatWindow.todoProgress", { done, total: tasks.length });
+  const summaryLabel = (
+    <span className="todo-summary-label">
+      <strong className="font-medium text-text">{t("chatWindow.todoList")}</strong>
+      {(collapsible || activityText) && (
+        <span className="todo-live-status" role="status" aria-live="polite" aria-hidden={!activityText} title={activityText ?? undefined} style={{ visibility: activityText ? "visible" : "hidden" }}>
+          <span className="live-status-dot live-pulse" aria-hidden="true" />
+          <span className="todo-live-status-text">{activityText ?? "\u00a0"}</span>
+        </span>
+      )}
+    </span>
+  );
 
   return (
     <section
@@ -82,7 +95,7 @@ export function TodoList({ phases = [], collapsible = false, defaultExpanded = f
           style={{ background: "none" }}
         >
           <ListChecks size={15} strokeWidth={1.8} aria-hidden />
-          <strong className="font-medium text-text">{t("chatWindow.todoList")}</strong>
+          {summaryLabel}
           <span className="ml-auto">{progress}</span>
           <ChevronDown
             size={14}
@@ -98,7 +111,7 @@ export function TodoList({ phases = [], collapsible = false, defaultExpanded = f
       ) : (
         <div className={`${headerRowClass} ${headerBorderClass}`}>
           <ListChecks size={15} strokeWidth={1.8} aria-hidden />
-          <strong className="font-medium text-text">{t("chatWindow.todoList")}</strong>
+          {summaryLabel}
           <span className="ml-auto">{progress}</span>
         </div>
       )}

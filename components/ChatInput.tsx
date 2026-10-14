@@ -1,8 +1,9 @@
 "use client";
 
+import { useAnchoredMenuPosition } from "@/hooks/useAnchoredMenuPosition";
 import React, { useRef, useState, useCallback, useEffect, useLayoutEffect, useImperativeHandle, forwardRef, memo, KeyboardEvent } from "react";
 import { createPortal } from "react-dom";
-import { ChevronDown, ClipboardPaste, ListChecks, Loader2, Mic, Paperclip, Plus, RotateCw, Shrink, Snail, Sparkles, Wrench, X, Zap } from "lucide-react";
+import { Send, ChevronDown, ClipboardPaste, ListChecks, Loader2, Mic, Paperclip, Plus, RotateCw, Shrink, Snail, Sparkles, Wrench, X, Zap } from "lucide-react";
 import { getSubmitDuringRunBehavior, isWordCompletionEnabled } from "@/lib/composer-prefs";
 import type { BuiltinSlashCommandResult, CompactResultInfo, QueuedMessages, SlashCommandInfo } from "@/hooks/useAgentSession";
 import type { ActiveGoal, ActivePlan } from "@/lib/web-mode-state";
@@ -145,6 +146,8 @@ const TOOL_PRESET_OPTIONS: Array<{ value: ToolPreset; descriptionKey: string }> 
 ];
 
 interface Props {
+  variant?: "starter" | "reply";
+  workspaceControl?: React.ReactNode;
   onSend: (message: string, images?: AttachedImage[]) => void;
   /** Ghost-text word completion for the draft (omp `predict_word`); absent = no ghost text. */
   onPredictWord?: PredictWord;
@@ -318,7 +321,7 @@ function menuDropStyle(placement: MenuPlacement, maxHeight: number | null): Reac
 }
 
 export const ChatInput = memo(forwardRef<ChatInputHandle, Props>(function ChatInput({
-  onSend, onPredictWord, onPredictWordFeedback, onAbort, onSteer, onFollowUp, isStreaming, model, isAutoModelSelection, modelNames, modelList, modelError, modelsLoading, onModelChange, fastModeEnabled, fastModeActive, usageLimit, fastModeSupported, onFastModeChange, slowModeSupported, slowModeEnabled, slowModeScope, onSlowModeChange,
+  variant = "reply", workspaceControl, onSend, onPredictWord, onPredictWordFeedback, onAbort, onSteer, onFollowUp, isStreaming, model, isAutoModelSelection, modelNames, modelList, modelError, modelsLoading, onModelChange, fastModeEnabled, fastModeActive, usageLimit, fastModeSupported, onFastModeChange, slowModeSupported, slowModeEnabled, slowModeScope, onSlowModeChange,
   onAbortCompaction, isCompacting, compactResult,
   thinkingLevel, onThinkingLevelChange, availableThinkingLevels, thinkingLevelMap, modelNameOverride,
   toolPreset, onToolPresetChange,
@@ -973,7 +976,10 @@ export const ChatInput = memo(forwardRef<ChatInputHandle, Props>(function ChatIn
   const historyFlip = useDropdownFlip(historyMenuOpen && inputHistory.length > 0, historyMenuRef, 0.44, 360);
   const slashFlip = useDropdownFlip(slashMenuOpen && slashQuery !== null, slashMenuRef, 0.56, 460);
   const atFlip = useDropdownFlip(atMenuOpen && atQuery !== null, atMenuRef, 0.48, 400);
-  const plusFlip = useDropdownFlip(plusMenuOpen, plusMenuRef, 0.44, 320);
+  const plusPlacement = useAnchoredMenuPosition(plusMenuOpen, plusMenuRef, 230, 320);
+  const modelPlacement = useAnchoredMenuPosition(modelDropdownOpen, dropdownRef, 360, 360);
+  const thinkingPlacement = useAnchoredMenuPosition(thinkingDropdownOpen, thinkingDropdownRef, 190, 400);
+  const contextPlacement = useAnchoredMenuPosition(contextOpen && !isMobile, contextWrapRef, 360, 460);
   const [dormantSkillNames, setDormantSkillNames] = useState<Set<string>>(() => new Set());
 
   const slashMenuOpenActive = slashQuery !== null;
@@ -1846,6 +1852,9 @@ export const ChatInput = memo(forwardRef<ChatInputHandle, Props>(function ChatIn
 
   return (
     <div
+      className="reference-composer"
+      data-variant={variant}
+      data-has-text={Boolean(value.trim() || attachedImages.length || attachedTextFiles.length)}
       role="group"
       aria-label={t("chatInput.composerLabel")}
       style={{
@@ -1892,7 +1901,7 @@ export const ChatInput = memo(forwardRef<ChatInputHandle, Props>(function ChatIn
         }}
       />
       <div style={{ maxWidth: CHAT_COLUMN_MAX_WIDTH, margin: "0 auto" }}>
-        <ModelErrorBanner error={modelError} />
+        {modelError && <details className="composer-model-error"><summary title={modelError}>{t("chatInput.modelError")}</summary><ModelErrorBanner error={modelError} /></details>}
         <ComposerModeStatus goal={activeGoal} plan={activePlan} />
         {/* Retry banner */}
         {retryInfo && (
@@ -2049,7 +2058,7 @@ export const ChatInput = memo(forwardRef<ChatInputHandle, Props>(function ChatIn
         )}
 
         {/* Main input */}
-        <div style={{ position: "relative" }}>
+        <div className="composer-frame" style={{ position: "relative" }}>
           {historyMenuVisible && (
             <div
               ref={historyMenuRef}
@@ -2708,7 +2717,7 @@ export const ChatInput = memo(forwardRef<ChatInputHandle, Props>(function ChatIn
               wordPrediction.update(el.value, el.selectionStart, el.selectionEnd);
             }}
             onPaste={handlePaste}
-            placeholder={t("chatInput.placeholder")}
+            placeholder={variant === "reply" ? "Reply" : t("chatInput.placeholder")}
             aria-label={t("chatInput.composerLabel")}
             role={composerMenuId ? "combobox" : undefined}
             aria-expanded={composerMenuId ? true : undefined}
@@ -2736,6 +2745,7 @@ export const ChatInput = memo(forwardRef<ChatInputHandle, Props>(function ChatIn
           </div>
           )}
 
+          </div>
           {/* Toolbar: plus menu · model · reasoning · fast · compact · send/queue/stop */}
           <div className="composer-toolbar" style={{
             display: "flex",
@@ -2747,8 +2757,9 @@ export const ChatInput = memo(forwardRef<ChatInputHandle, Props>(function ChatIn
             flexWrap: "wrap",
             rowGap: 6,
           }}>
+            {workspaceControl}
             {/* Plus menu — attachment · tools submenu · advisor submenu */}
-            <div ref={plusMenuRef} style={{ position: "relative", flexShrink: 0 }}>
+            <div ref={plusMenuRef} className="composer-plus-control" style={{ position: "relative", flexShrink: 0 }}>
               <button
                 onClick={() => setPlusMenuOpen((v) => !v)}
                 title={t("chatInput.plusMenu")}
@@ -2791,7 +2802,7 @@ export const ChatInput = memo(forwardRef<ChatInputHandle, Props>(function ChatIn
                     position: "absolute", left: 0,
                     zIndex: 100, width: 230, maxWidth: "calc(100vw - 32px)",
                     overflowY: "auto",
-                    ...menuDropStyle(plusFlip.placement, plusFlip.maxHeight),
+                    ...plusPlacement,
                   }}
                 >
                   <div className="picker-panel-header">
@@ -2975,8 +2986,9 @@ export const ChatInput = memo(forwardRef<ChatInputHandle, Props>(function ChatIn
                       zIndex: 500,
                       display: "flex",
                       flexDirection: "column",
-                      height: isMobile ? undefined : "min(360px, calc(100dvh - 32px))",
                       maxHeight: isMobile ? "calc(100dvh - 32px)" : undefined,
+                      ...modelPlacement,
+                      height: "auto",
                     }}
                   >
                       <div className="picker-panel-header">
@@ -3013,6 +3025,7 @@ export const ChatInput = memo(forwardRef<ChatInputHandle, Props>(function ChatIn
               </div>
             )}
 
+            <span className="composer-disclaimer">OMP is AI and can make mistakes.</span>
             <div className="composer-toolbar-spacer" style={{ marginLeft: "auto" }} />
 
             {/* Thinking selector — compact, expressive, and consistent with models */}
@@ -3061,6 +3074,7 @@ export const ChatInput = memo(forwardRef<ChatInputHandle, Props>(function ChatIn
                     style={{
                       position: "absolute", bottom: "calc(100% + 6px)", left: 0,
                       zIndex: 100, width: 190, maxWidth: "calc(100vw - 32px)",
+                      ...thinkingPlacement,
                     }}
                   >
                     <div className="picker-panel-header">
@@ -3275,6 +3289,7 @@ export const ChatInput = memo(forwardRef<ChatInputHandle, Props>(function ChatIn
                       zIndex: 60,
                       padding: 12,
                       maxHeight: isMobile ? "calc(100dvh - 68px - env(safe-area-inset-top))" : contextMaxHeight,
+                      ...(!isMobile ? contextPlacement : {}),
                       overflowY: "auto",
                     }}
                   >
@@ -3428,6 +3443,7 @@ export const ChatInput = memo(forwardRef<ChatInputHandle, Props>(function ChatIn
                 className="composer-primary-action"
                 onClick={isRecording || isPaused || isReviewing ? () => stopAndFinishDictation("send") : () => void handleSend()}
                 disabled={isTranscribing || !(isRecording || isPaused || isReviewing || value.trim() || attachedImages.length || attachedTextFiles.length)}
+                aria-label={t("chatInput.send")}
                 title={isRecording || isPaused || isReviewing ? t("chatInput.sendDictation") : t("chatInput.send")}
                 style={{
                   display: "flex", alignItems: "center", gap: 6,
@@ -3445,15 +3461,11 @@ export const ChatInput = memo(forwardRef<ChatInputHandle, Props>(function ChatIn
                 {isTranscribing ? (
                   <Loader2 size={12} strokeWidth={2} className="animate-spin" aria-hidden="true" />
                 ) : (
-                  <svg width="12" height="12" viewBox="0 0 14 14" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
-                    <line x1="2" y1="7" x2="11" y2="7" />
-                    <polyline points="7.5 3 12 7 7.5 11" />
-                  </svg>
+                  <Send size={17} strokeWidth={1.8} aria-hidden="true" />
                 )}
-                {t("chatInput.send")}
+                <span className="composer-action-label">{t("chatInput.send")}</span>
               </button>
             )}
-          </div>
           </div>
         </div>
 

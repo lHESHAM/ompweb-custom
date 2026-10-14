@@ -367,7 +367,7 @@ export function ExtensionDialog({
             event.preventDefault();
           }
         }}
-        className={attached ? undefined : "animate-scale-in"}
+        className={attached ? undefined : "app-dialog-surface animate-scale-in"}
         style={{
           width: attached ? "100%" : "min(560px, 100%)",
           boxSizing: "border-box",

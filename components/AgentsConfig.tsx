@@ -1,5 +1,7 @@
 "use client";
 
+import { PolishedSelect } from "./ui/PolishedSelect";
+
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { AlertCircle, Bot, Check, Copy, Plus, RefreshCw, Search, Trash2 } from "lucide-react";
 import { Alert } from "@/components/ui/field";
@@ -351,10 +353,10 @@ export function AgentsConfig({ cwd }: { cwd: string | null }) {
                   {creating ? (
                     <label style={{ display: "flex", alignItems: "center", gap: 6, fontSize: 11, color: "var(--text-muted)" }}>
                       {t("agentsConfig.scope")}
-                      <select value={createScope} onChange={(e) => setCreateScope(e.target.value as "user" | "project")} style={{ ...nativeSelectStyle, fontSize: 11, minHeight: 28 }}>
+                      <PolishedSelect value={createScope} onValueChange={(nextValue) => setCreateScope(nextValue as "user" | "project")} style={{ ...nativeSelectStyle, fontSize: 11, minHeight: 28 }}>
                         <option value="user">{t("agentsConfig.scopeUser")}</option>
                         <option value="project" disabled={!canEditProject}>{t("agentsConfig.scopeProject")}</option>
-                      </select>
+                      </PolishedSelect>
                     </label>
                   ) : null}
                 </div>
@@ -373,9 +375,9 @@ export function AgentsConfig({ cwd }: { cwd: string | null }) {
                   </label>
                   <label style={{ display: "flex", flexDirection: "column", gap: 4 }}>
                     <span style={{ fontSize: 11, color: "var(--text-muted)" }}>{t("agentsConfig.thinkingLevel")}</span>
-                    <select value={thinkingLevel} onChange={(e) => setThinkingLevel(e.target.value)} style={nativeSelectStyle}>
+                    <PolishedSelect value={thinkingLevel} onValueChange={(nextValue) => setThinkingLevel(nextValue)} style={nativeSelectStyle}>
                       {THINKING_LEVELS.map((lv) => <option key={lv} value={lv}>{lv || t("agentsConfig.defaultThinking")}</option>)}
-                    </select>
+                    </PolishedSelect>
                   </label>
                 </div>
                 <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 10 }}>

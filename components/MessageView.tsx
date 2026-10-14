@@ -369,6 +369,7 @@ function UserMessageView({ message, cwd, onOpenFile, entryId, onFork, forking, f
 
   return (
     <div
+      className="reference-user-message"
       style={{ marginBottom: 18, display: "flex", flexDirection: "column", alignItems: "flex-end", paddingRight: 6 }}
     >
       <div style={{ display: "flex", flexDirection: "column", alignItems: "flex-end", maxWidth: "85%", minWidth: 0 }}>
@@ -697,7 +698,7 @@ function AssistantMessageView({
         })()}
       </div>
 
-      <div ref={bodyRef} data-selection-scope="message" tabIndex={-1} style={{ display: "flex", flexDirection: "column", gap: 3 }}>
+      <div className="reference-assistant-message" ref={bodyRef} data-selection-scope="message" tabIndex={-1} style={{ display: "flex", flexDirection: "column", gap: 3 }}>
         {blockItems.map(({ block, originalIndex }) => (
           <BlockView
             key={`${entryId ?? "stream"}-${originalIndex}`}

@@ -35,14 +35,14 @@ export function DialogContent({ children, className, style, ariaLabel }: {
       <BaseDialog.Backdrop
         style={{
           position: "fixed", inset: 0,
-          background: "var(--overlay-backdrop)",
-          backdropFilter: "blur(2px)",
+          background: "color-mix(in srgb, var(--bg) 72%, transparent)",
+          backdropFilter: "blur(1px)",
           zIndex: 1000,
         }}
       />
       <BaseDialog.Popup
         aria-label={ariaLabel}
-        className={className}
+        className={["app-dialog-surface", className].filter(Boolean).join(" ")}
         style={{
           position: "fixed", top: "50%", left: "50%",
           transform: "translate(-50%, -50%)",
@@ -51,13 +51,13 @@ export function DialogContent({ children, className, style, ariaLabel }: {
           // whole (fill: both) lifetime.
           animation: "dialog-pop-in var(--dur-med) var(--ease-out-warm) both",
            zIndex: 1001,
-          background: "var(--bg)",
+          background: "var(--bg-panel)",
           color: "var(--text)",
           border: "1px solid var(--border)",
           borderRadius: "var(--radius-modal)",
           boxShadow: "var(--shadow-modal)",
-          padding: 20,
-          maxWidth: "min(92vw, 560px)",
+          padding: 24,
+          maxWidth: "min(92vw, 720px)",
           maxHeight: "calc(100dvh - 24px - env(safe-area-inset-top) - env(safe-area-inset-bottom))",
           overflow: "auto",
           ...style,
@@ -71,7 +71,7 @@ export function DialogContent({ children, className, style, ariaLabel }: {
 
 export function DialogTitle({ children, style }: { children: React.ReactNode; style?: React.CSSProperties }) {
   return (
-    <BaseDialog.Title className="display-serif" style={{ fontSize: 20, margin: "0 0 12px", ...style }}>
+    <BaseDialog.Title className="app-dialog-title" style={{ fontSize: 22, fontWeight: 600, lineHeight: 1.25, margin: "0 0 8px", ...style }}>
       {children}
     </BaseDialog.Title>
   );

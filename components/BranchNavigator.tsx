@@ -259,17 +259,23 @@ export function BranchNavigator({ tree, activeLeafId, onLeafChange, inline, cont
   const [openInternal, setOpenInternal] = useState(false);
   const open = openProp !== undefined ? openProp : openInternal;
   const btnRef = useRef<HTMLButtonElement>(null);
-  const [dropdownPos, setDropdownPos] = useState<{ top: number; left: number; width: number; height: number } | null>(null);
+  const [dropdownPos, setDropdownPos] = useState<{ top?: number; bottom?: number; left: number; width: number; height: number } | null>(null);
 
   useEffect(() => {
     if (!open || !inline) return;
     const anchor = containerRef?.current ?? btnRef.current;
     if (!anchor) return;
     const update = () => {
-      const rect = anchor.getBoundingClientRect();
-      const width = rect.width;
-      const height = Math.min(260, window.innerHeight - rect.bottom - 8);
-      setDropdownPos({ top: rect.bottom, left: Math.max(0, Math.min(rect.left, window.innerWidth - width)), width, height: Math.max(60, height) });
+      const scale = parseFloat(getComputedStyle(document.documentElement).getPropertyValue("--ui-scale")) || 1;
+      const rect = (btnRef.current ?? anchor).getBoundingClientRect();
+      const viewportWidth = window.innerWidth / scale;
+      const viewportHeight = window.innerHeight / scale;
+      const width = Math.min(360, viewportWidth - 16);
+      const above = Math.max(0, rect.top / scale - 14);
+      const below = Math.max(0, viewportHeight - rect.bottom / scale - 14);
+      const flip = below < 260 && above > below;
+      const height = Math.min(260, flip ? above : below);
+      setDropdownPos({ ...(flip ? { bottom: viewportHeight - rect.top / scale + 6 } : { top: rect.bottom / scale + 6 }), left: Math.max(8, Math.min(rect.left / scale, viewportWidth - width - 8)), width, height });
     };
     update();
     const ro = new ResizeObserver(update);
@@ -373,6 +379,7 @@ export function BranchNavigator({ tree, activeLeafId, onLeafChange, inline, cont
           <div data-branch-panel className="dropdown-surface" style={{
             position: "fixed",
             top: dropdownPos.top,
+            bottom: dropdownPos.bottom,
             left: dropdownPos.left,
             width: dropdownPos.width,
             maxHeight: dropdownPos.height,

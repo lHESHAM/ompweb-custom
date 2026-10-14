@@ -1024,6 +1024,18 @@ export function ChatWindow({ session, newSessionCwd, newSessionWorkspace, toolCa
     return null;
   }, [bashRunning, pendingBash, isCompacting, agentRunning, streamState.streamingMessage, pendingToolHeaders.length, agentPhase, activeSubagentCount, currentTodoPhase, t, tn]);
 
+  // Tasks own the live status while present, so model/tool phases do not
+  // insert and remove a second strip above the composer.
+  const taskActivityText = useMemo(() => {
+    if (!(agentRunning || isCompacting || (bashRunning && !pendingBash))) return null;
+    return [
+      isCompacting ? t("chatWindow.compactingContext")
+        : bashRunning && !pendingBash ? t("chatWindow.runningCommand") : phaseLabel(agentPhase),
+      activeSubagentCount > 0 ? tn("chatWindow.subagentCount", activeSubagentCount) : null,
+      currentTodoPhase?.name,
+    ].filter(Boolean).join(" · ");
+  }, [agentRunning, isCompacting, bashRunning, pendingBash, agentPhase, activeSubagentCount, currentTodoPhase, t, tn]);
+
   const askOpen = extensionDialog?.method === "ask";
   const hiddenComposerRef = useRef<HTMLDivElement>(null);
   useEffect(() => {
@@ -1036,6 +1048,8 @@ export function ChatWindow({ session, newSessionCwd, newSessionWorkspace, toolCa
   const chatInputElement = (
     <ChatInput
       ref={chatInputRef}
+      variant={isEmptyNew ? "starter" : "reply"}
+      workspaceControl={isEmptyNew ? newSessionWorkspace : undefined}
       sessionInfoContainer={sessionInfoContainer}
       onSend={handleSend}
       onPredictWord={handlePredictWord}
@@ -1099,7 +1113,7 @@ export function ChatWindow({ session, newSessionCwd, newSessionWorkspace, toolCa
          accept Escape-to-minimize in the fresh-chat branch where there is
          nothing to collapse. */
       onMinimize={isEmptyNew ? undefined : handleMinimize}
-      statusText={composerStatusText}
+      statusText={todoPhases.length > 0 ? null : composerStatusText}
       onOpenProviders={onOpenProviders}
     />
   );
@@ -1197,9 +1211,9 @@ export function ChatWindow({ session, newSessionCwd, newSessionWorkspace, toolCa
       )}
 
       {isEmptyNew ? (
-        <div className="relative flex flex-1 flex-col overflow-hidden">
+        <div className="reference-starter relative flex flex-1 flex-col overflow-hidden">
           <div className="flex flex-1 flex-col items-center justify-center overflow-y-auto py-8" style={{ minHeight: 0, paddingInline: CHAT_COLUMN_PADDING }}>
-          <div className="w-full" style={{ maxWidth: CHAT_COLUMN_MAX_WIDTH }}>
+          <div className="w-full" style={{ maxWidth: 640 }}>
             <div
                className="mb-3 empty-chat-brand"
               style={{
@@ -1227,7 +1241,6 @@ export function ChatWindow({ session, newSessionCwd, newSessionWorkspace, toolCa
               <h1 className="display-serif">{t("appShell.newSessionTitle")}</h1>
               <p>{t("appShell.newSessionDescription")}</p>
             </div>
-            {newSessionWorkspace}
             <NoticeShelf notices={notices} onDismiss={dismissNotice} align="right" />
             <SkillDiagnosticsNotice snapshot={skillDiagnostics} onDisable={() => setSkillStartupDiagnostics(false)} />
             <ComposerPanels todoPhases={[]} subagents={[]} onSelectSubagent={setSelectedSubagent} btw={btwPanel} />
@@ -1407,7 +1420,7 @@ export function ChatWindow({ session, newSessionCwd, newSessionWorkspace, toolCa
           taller than the viewport (soft keyboard up, Tasks expanded), the
           panels block below scrolls and the input stays reachable instead of
           being clipped off the bottom. */}
-      <div className="relative" style={{ display: composerMinimized ? "none" : "flex", flexDirection: "column", minHeight: 0 }}>
+      <div className="reference-reply-dock relative" style={{ display: composerMinimized ? "none" : "flex", flexDirection: "column", minHeight: 0 }}>
         {/* Minimize chevron above the composer area */}
         <div style={{ padding: `0 ${CHAT_COLUMN_PADDING}px`, flexShrink: 0 }}>
           <div style={{ maxWidth: CHAT_COLUMN_MAX_WIDTH, margin: "0 auto", display: "flex", justifyContent: "center" }}>
@@ -1452,6 +1465,7 @@ export function ChatWindow({ session, newSessionCwd, newSessionWorkspace, toolCa
             <SkillDiagnosticsNotice snapshot={skillDiagnostics} onDisable={() => setSkillStartupDiagnostics(false)} />
             <ComposerPanels
               todoPhases={todoPhases}
+              activityText={taskActivityText}
               subagents={subagents}
               onSelectSubagent={setSelectedSubagent}
               btw={btwPanel}

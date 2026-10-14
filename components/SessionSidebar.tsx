@@ -1318,14 +1318,12 @@ export const SessionSidebar = memo(function SessionSidebar({ selectedSessionId, 
               boxSizing: "border-box",
               padding: "0 9px",
               background: "var(--bg)",
-              border: "1px solid var(--border)",
+              border: "none",
               borderRadius: "var(--radius-control)",
               outline: "none",
               color: "var(--text)",
               fontSize: 12,
             }}
-            onFocus={(e) => { e.currentTarget.style.borderColor = "var(--accent)"; }}
-            onBlur={(e) => { e.currentTarget.style.borderColor = "var(--border)"; }}
           />
         </div>
       )}

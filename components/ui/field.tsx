@@ -1,5 +1,7 @@
 "use client";
 
+import { PolishedSelect } from "./PolishedSelect";
+
 /**
  * Warm-paper form field primitives + confirmation dialog.
  *
@@ -477,10 +479,10 @@ export function Select({
   const isInvalid = Boolean(invalid || error);
   return (
     <div style={{ position: "relative", display: "flex", alignItems: "center" }}>
-    <select
+    <PolishedSelect
       id={id}
       value={value}
-      onChange={(e) => onChange(e.target.value)}
+      onValueChange={(nextValue) => onChange(nextValue)}
       disabled={disabled}
       aria-invalid={isInvalid || undefined}
       onFocus={() => setFocused(true)}
@@ -501,21 +503,7 @@ export function Select({
           {o}
         </option>
       ))}
-    </select>
-    <svg
-      width="10"
-      height="10"
-      viewBox="0 0 24 24"
-      fill="none"
-      stroke="currentColor"
-      strokeWidth="2"
-      strokeLinecap="round"
-      strokeLinejoin="round"
-      aria-hidden="true"
-      style={{ position: "absolute", right: 8, color: "var(--text-dim)", pointerEvents: "none" }}
-    >
-      <polyline points="6 9 12 15 18 9" />
-    </svg>
+    </PolishedSelect>
     </div>
   );
 }

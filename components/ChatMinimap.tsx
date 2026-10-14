@@ -1,6 +1,6 @@
 "use client";
 
-import { memo, useEffect, useRef, useState, useCallback, useMemo, type RefObject } from "react";
+import { memo, useLayoutEffect, useEffect, useRef, useState, useCallback, useMemo, type RefObject } from "react";
 import { usePrefersReducedMotion } from "@/hooks/usePrefersReducedMotion";
 import type { AgentMessage, TextContent } from "@/lib/types";
 
@@ -90,6 +90,8 @@ export const ChatMinimap = memo(function ChatMinimap({ messages, scrollContainer
   const [hoveredIndex, setHoveredIndex] = useState<number | null>(null);
   const [isRailHovered, setIsRailHovered] = useState(false);
   const railRef = useRef<HTMLDivElement>(null);
+  const tooltipContainerRef = useRef<HTMLDivElement>(null);
+  const [tooltipTopPx, setTooltipTopPx] = useState<number | null>(null);
   const draggingRef = useRef(false);
   const scrollRafRef = useRef<number | null>(null);
 
@@ -305,18 +307,53 @@ export const ChatMinimap = memo(function ChatMinimap({ messages, scrollContainer
     };
   }, []);
 
-  if (nodes.length === 0) {
-    return null;
-  }
-
-  // Active or explicitly hovered tooltip target
+  // Active or explicitly hovered tooltip target.
   const displayTooltipIndex = hoveredIndex !== null ? hoveredIndex : (isRailHovered ? activeIndex : null);
   const tooltipNode = displayTooltipIndex !== null ? nodes[displayTooltipIndex] : null;
-  // Calculate unclipped vertical center position for the tooltip
-  const tooltipTopPx = displayTooltipIndex !== null ? 6 + displayTooltipIndex * ROW_HEIGHT + ROW_HEIGHT / 2 : 0;
+
+  useLayoutEffect(() => {
+    const rail = railRef.current;
+    const container = tooltipContainerRef.current;
+    const row = displayTooltipIndex !== null
+      ? rail?.querySelector<HTMLElement>(`[data-index="${displayTooltipIndex}"]`)
+      : null;
+    if (!rail || !container || !row) {
+      setTooltipTopPx(null);
+      return;
+    }
+    const updatePosition = () => {
+      const rowRect = row.getBoundingClientRect();
+      const railRect = rail.getBoundingClientRect();
+      const containerRect = container.getBoundingClientRect();
+      const center = rowRect.top + rowRect.height / 2;
+      // A scrolled-out tick has no visible preview anchor.
+      if (center < railRect.top || center > railRect.bottom) {
+        setTooltipTopPx(null);
+        return;
+      }
+      // Rects include interface zoom; absolute top uses unscaled CSS pixels.
+      const scale = container.offsetHeight > 0 ? containerRect.height / container.offsetHeight : 1;
+      setTooltipTopPx((center - containerRect.top) / (scale || 1));
+    };
+    updatePosition();
+    const observer = new ResizeObserver(updatePosition);
+    observer.observe(rail);
+    observer.observe(container);
+    observer.observe(row);
+    rail.addEventListener("scroll", updatePosition, { passive: true });
+    window.addEventListener("resize", updatePosition);
+    return () => {
+      observer.disconnect();
+      rail.removeEventListener("scroll", updatePosition);
+      window.removeEventListener("resize", updatePosition);
+    };
+  }, [displayTooltipIndex, nodes]);
+
+  if (nodes.length === 0) return null;
 
   return (
     <div
+      ref={tooltipContainerRef}
       style={{
         position: "relative",
         display: "flex",
@@ -327,7 +364,7 @@ export const ChatMinimap = memo(function ChatMinimap({ messages, scrollContainer
       }}
     >
       {/* Floating Preview Tooltip - rendered in unclipped outer container! */}
-      {tooltipNode && (
+      {tooltipNode && tooltipTopPx !== null && (
         <div
           role="tooltip"
           onClick={(e) => {
@@ -355,7 +392,6 @@ export const ChatMinimap = memo(function ChatMinimap({ messages, scrollContainer
             overflow: "hidden",
             textOverflow: "ellipsis",
             cursor: "pointer",
-            transition: "top 120ms var(--ease-out-warm)",
           }}
         >
           {tooltipNode.text}

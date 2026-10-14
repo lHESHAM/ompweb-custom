@@ -104,3 +104,79 @@ test("falls back to assistant messages when no user prompts exist", () => {
   assert.match(html, /aria-label="Jump to: Welcome to the agent"/);
   assert.match(html, /aria-label="Jump to: Ready for tasks"/);
 });
+
+
+test("preview follows actual row geometry after history expansion, scrolling, resize, and zoom", async () => {
+  const { JSDOM } = await import("jsdom");
+  const dom = new JSDOM("<!doctype html><html><body><div id='root'></div></body></html>", { url: "http://localhost" });
+  const observers = new Set();
+  class TestResizeObserver {
+    constructor(callback) { this.callback = callback; observers.add(callback); }
+    observe() {}
+    disconnect() { observers.delete(this.callback); }
+  }
+  const globals = { window: dom.window, document: dom.window.document, HTMLElement: dom.window.HTMLElement, Node: dom.window.Node, ResizeObserver: TestResizeObserver, IS_REACT_ACT_ENVIRONMENT: true };
+  const saved = new Map(Object.keys(globals).map((key) => [key, Object.getOwnPropertyDescriptor(globalThis, key)]));
+  for (const [key, value] of Object.entries(globals)) Object.defineProperty(globalThis, key, { configurable: true, writable: true, value });
+  dom.window.matchMedia = () => ({ matches: false, addEventListener() {}, removeEventListener() {} });
+  dom.window.HTMLElement.prototype.scrollIntoView = () => {};
+  let count = 2, scale = 1, fixedRows = false;
+  const railHeight = () => Math.min(520, 12 + count * 18);
+  const stride = () => fixedRows ? 18 : (railHeight() - 12) / count;
+  const rect = (top, height) => ({ top: top * scale, bottom: (top + height) * scale, height: height * scale, left: 0, right: 40 * scale, width: 40 * scale, x: 0, y: top * scale });
+  dom.window.HTMLElement.prototype.getBoundingClientRect = function () {
+    if (this.hasAttribute("data-index")) {
+      return rect(100 + 6 + Number(this.dataset.index) * stride() - this.parentElement.scrollTop, stride());
+    }
+    return rect(100, railHeight());
+  };
+  Object.defineProperty(dom.window.HTMLElement.prototype, "offsetHeight", { configurable: true, get: () => railHeight() });
+  const { createRoot } = await import("react-dom/client");
+  const { act } = React;
+  const root = createRoot(dom.window.document.getElementById("root"));
+  const render = async (length) => {
+    count = length;
+    await act(async () => root.render(React.createElement(ChatMinimap, {
+      messages: Array.from({ length }, (_, index) => ({ role: "user", content: "Prompt " + index })),
+      scrollContainer: { current: null }, messageRefs: { current: [] },
+    })));
+  };
+  const hover = async (index) => {
+    const row = dom.window.document.querySelector('[data-index="' + index + '"]');
+    await act(async () => row.dispatchEvent(new dom.window.MouseEvent("mouseover", { bubbles: true })));
+  };
+  const assertAligned = (index) => {
+    const rail = dom.window.document.querySelector('[role="navigation"]');
+    const preview = dom.window.document.querySelector('[role="tooltip"]');
+    assert.ok(preview, "visible row must have a preview");
+    const expected = 6 + index * stride() + stride() / 2 - rail.scrollTop;
+    assert.ok(Math.abs(parseFloat(preview.style.top) - expected) < 0.001, "tooltip must track the measured row center");
+  };
+  try {
+    await render(2);
+    await hover(1);
+    assertAligned(1);
+    // Expanding history changes row heights without changing the hovered index.
+    await render(86);
+    assertAligned(1);
+    for (const index of [20, 60, 85]) { await hover(index); assertAligned(index); }
+    await hover(60);
+    const rail = dom.window.document.querySelector('[role="navigation"]');
+    await act(async () => { rail.scrollTop = 80; rail.dispatchEvent(new dom.window.Event("scroll")); });
+    assertAligned(60);
+    // Also support a scrolling rail with fixed-height rows and CSS interface zoom.
+    fixedRows = true;
+    scale = 1.25;
+    await act(async () => { rail.scrollTop = 850; for (const callback of [...observers]) callback([]); });
+    assertAligned(60);
+    await act(async () => { rail.scrollTop = 2000; rail.dispatchEvent(new dom.window.Event("scroll")); });
+    assert.equal(dom.window.document.querySelector('[role="tooltip"]'), null, "off-screen rows must not show floating previews");
+  } finally {
+    await act(async () => root.unmount());
+    for (const [key, descriptor] of saved) {
+      if (descriptor) Object.defineProperty(globalThis, key, descriptor);
+      else delete globalThis[key];
+    }
+    dom.window.close();
+  }
+});

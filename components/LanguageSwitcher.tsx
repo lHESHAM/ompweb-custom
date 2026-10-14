@@ -34,7 +34,7 @@ export function LanguageSwitcher() {
 
   // Fixed positioning escapes the compact top-bar overflow strip, whose
   // horizontal scroller would otherwise clip the menu to its 48px height.
-  const menuPos = useFixedMenuPosition(open, triggerRef, 120);
+  const menuPos = useFixedMenuPosition(open, triggerRef, 120, 180);
   const menuShown = menuPos !== null;
 
   // Focus the active item once the positioned menu mounts, or when the highlight moves.
@@ -147,10 +147,10 @@ export function LanguageSwitcher() {
           className="dropdown-surface animate-slide-down"
           style={{
             position: "fixed",
-            top: menuPos.top,
-            left: menuPos.left,
+            ...menuPos,
+            overflowY: "auto",
             zIndex: 600,
-            minWidth: 120,
+            minWidth: 0,
             margin: 0,
             padding: 4,
             listStyle: "none",

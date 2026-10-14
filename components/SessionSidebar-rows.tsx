@@ -681,7 +681,8 @@ const SessionItem = memo(function SessionItem({
         alignItems: "center",
         gap: 6,
         width: "100%",
-        margin: "1px 0",
+        margin: "3px 0",
+        borderRadius: "var(--radius-control)",
         padding: `0 8px 0 ${30 + depth * 14}px`,
         position: "relative",
         overflow: "hidden",
@@ -691,21 +692,6 @@ const SessionItem = memo(function SessionItem({
         transition: "background var(--dur-fast) var(--ease-out-warm), opacity var(--dur-fast) var(--ease-out-warm)",
       }}
     >
-      {isSelected && (
-        <span
-          aria-hidden="true"
-          style={{
-            position: "absolute",
-            left: 20 + depth * 14,
-            top: 0,
-            bottom: 0,
-            width: 2,
-            borderRadius: 1,
-            background: "var(--accent)",
-            pointerEvents: "none",
-          }}
-        />
-      )}
       {renaming ? (
         <input ref={inputRef} autoFocus aria-label={t("sessionSidebar.rename")} value={renameValue} onChange={(event) => setRenameValue(event.target.value)} onBlur={commitRename} onKeyDown={(event) => { if (event.key === "Enter") void commitRename(); if (event.key === "Escape") { event.preventDefault(); renameCancelRef.current = true; setRenaming(false); } }} style={{ flex: 1, height: 25, padding: "3px 7px", border: "1px solid var(--accent)", borderRadius: "var(--radius-control)", outline: "none", background: "var(--bg)", color: "var(--text)", fontSize: 12 }} />
       ) : (

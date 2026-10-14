@@ -16,13 +16,14 @@ import { toast } from "./ui/toast";
 import { notificationHistory, useUnreadNotificationCount } from "@/lib/notification-history";
 import { ConfirmDialog } from "./ui/field";
 import { ChatWindow } from "./ChatWindow";
+import { WorkspacePicker } from "./WorkspacePicker";
 import { type Tab } from "./TabBar";
 import { type FileExplorerHandle } from "./FileExplorer";
 import type { RightPanelView } from "./RightPanel";
 import { BranchNavigator } from "./BranchNavigator";
 import { LanguageSwitcher } from "./LanguageSwitcher";
 import { CommandPaletteMount } from "./CommandPaletteMount";
-import { Check, ChevronDown, Command, Ellipsis, Folder, GitBranch, History, Menu, PanelLeft, PanelRight, Terminal, Wand2, Zap } from "lucide-react";
+import { Check, Command, Ellipsis, Folder, History, Menu, PanelLeft, PanelRight, Terminal, Wand2, Zap } from "lucide-react";
 import { ThemeSwitcher } from "./ThemeSwitcher";
 import { translate, useI18n } from "@/lib/i18n";
 import { formatApiError } from "@/lib/i18n/api-error";
@@ -1703,6 +1704,12 @@ export function AppShell({ appName }: { appName: string }) {
   const speed = showChat ? formatGenerationSpeed(rate) : null;
   const hasGenerationSpeed = speed !== null;
   useLayoutEffect(() => {
+    // Chat uses the compact controls menu at every width; measuring its hidden
+    // children during panel resizing only forces layout without changing UI.
+    if (showChat) {
+      setCompactTopbar(true);
+      return;
+    }
     const header = topBarRef.current;
     const details = mobileToolsRef.current;
     const content = mobileToolsContentRef.current;
@@ -1992,7 +1999,7 @@ export function AppShell({ appName }: { appName: string }) {
       )}
 
       {/* Center: chat */}
-      <main id="main-content" tabIndex={-1} inert={rightPanelIsModal ? true : undefined} style={{ flex: 1, display: "flex", flexDirection: "column", minHeight: 0, minWidth: 0, overflow: "hidden" }}>
+      <main className={showChat && !settingsTab ? "reference-chat" : undefined} id="main-content" tabIndex={-1} inert={rightPanelIsModal ? true : undefined} style={{ flex: 1, display: "flex", flexDirection: "column", minHeight: 0, minWidth: 0, overflow: "hidden" }}>
         {settingsTab ? (
           <SettingsConfig
             activeTab={settingsTab}
@@ -2049,8 +2056,8 @@ export function AppShell({ appName }: { appName: string }) {
             <details
               ref={mobileToolsRef}
               className="shell-topbar-overflow"
-              data-compact={isMobile ? "true" : compactTopbar === null ? "pending" : compactTopbar}
-              open={isMobile ? undefined : compactTopbar ? undefined : true}
+              data-compact={showChat || isMobile ? "true" : compactTopbar === null ? "pending" : compactTopbar}
+              open={showChat || isMobile ? undefined : compactTopbar ? undefined : true}
               onToggle={(event) => {
                 if (!event.currentTarget.open) setActiveTopPanel(null);
               }}
@@ -2414,71 +2421,35 @@ export function AppShell({ appName }: { appName: string }) {
               session={selectedSession}
               newSessionCwd={effectiveNewSessionCwd}
               newSessionWorkspace={effectiveNewSessionCwd && (
-                <div className="new-session-workspace">
-                  <label id="new-session-workspace-label" htmlFor="new-session-workspace" className="new-session-workspace-label">
-                    {t("settingsConfig.chipWorkspace")}
-                  </label>
-                  <div className="new-session-workspace-control">
-                    <span className="new-session-workspace-icon" aria-hidden="true">
-                      <Folder size={17} strokeWidth={1.8} />
-                    </span>
-                    <select
-                      id="new-session-workspace"
-                      aria-describedby="new-session-workspace-path"
-                      value={effectiveNewSessionCwd}
-                      onChange={(event) => {
-                        const cwd = event.target.value;
-                        if (!cwd) {
-                          setAddProjectOpen(true);
-                          return;
-                        }
-                        if (cwd === effectiveNewSessionCwd) return;
-                        suppressCwdRef.current = cwd;
-                        setActiveCwd(cwd);
-                        handleNewSession("", cwd);
-                      }}
-                    >
-                      {!workspaceOptions.projects.some((project) => comparableProjectPath(project.path) === comparableProjectPath(newSessionProject)) && (
-                        <option value={effectiveNewSessionCwd}>{projectLabel(effectiveNewSessionCwd)}</option>
-                      )}
-                      {workspaceOptions.projects.map((project) => {
-                        const current = comparableProjectPath(project.path) === comparableProjectPath(newSessionProject);
-                        const label = project.alias ?? projectLabel(project.path);
-                        const duplicate = workspaceOptions.projects.some((other) => other.path !== project.path && (other.alias ?? projectLabel(other.path)) === label);
-                        return (
-                          <option key={project.path} value={current ? effectiveNewSessionCwd : project.path}>
-                            {duplicate ? `${label} — ${project.path}` : label}
-                          </option>
-                        );
-                      })}
-                      <option value="">+ {t("projects.add")}</option>
-                    </select>
-                    <ChevronDown className="new-session-workspace-chevron" size={16} strokeWidth={1.8} aria-hidden="true" />
-                  </div>
-                  {/* The workspace's worktrees: picking one sets where the new
-                      session starts (same switch as the file panel's Worktrees tab). */}
+                <div className="composer-workspaces">
+                  <WorkspacePicker
+                    label={t("settingsConfig.chipWorkspace")}
+                    value={effectiveNewSessionCwd}
+                    options={[
+                      ...(!workspaceOptions.projects.some((project) => comparableProjectPath(project.path) === comparableProjectPath(newSessionProject))
+                        ? [{ value: effectiveNewSessionCwd, label: projectLabel(effectiveNewSessionCwd), description: effectiveNewSessionCwd }] : []),
+                      ...workspaceOptions.projects.map((project) => ({
+                        value: comparableProjectPath(project.path) === comparableProjectPath(newSessionProject) ? effectiveNewSessionCwd : project.path,
+                        label: project.alias ?? projectLabel(project.path),
+                        description: project.path,
+                      })),
+                    ]}
+                    onChange={(cwd) => {
+                      if (cwd === effectiveNewSessionCwd) return;
+                      suppressCwdRef.current = cwd;
+                      setActiveCwd(cwd);
+                      handleNewSession("", cwd);
+                    }}
+                    onAdd={() => setAddProjectOpen(true)}
+                    addLabel={t("projects.add")}
+                  />
                   {worktreeCtx && worktreeCtx.worktrees.length > 1
                     && comparableProjectPath(worktreeCtx.projectRoot) === comparableProjectPath(newSessionProject) && (
-                    <div className="new-session-workspace-control">
-                      <span className="new-session-workspace-icon" aria-hidden="true">
-                        <GitBranch size={17} strokeWidth={1.8} />
-                      </span>
-                      <select
-                        aria-label={t("sessionSidebar.switchWorktree")}
-                        aria-describedby="new-session-workspace-path"
+                      <WorkspacePicker kind="worktree" label={t("sessionSidebar.switchWorktree")}
                         value={worktreeCtx.currentPath}
-                        onChange={(event) => worktreeCtx.select(event.target.value)}
-                      >
-                        {worktreeCtx.worktrees.map((wt) => (
-                          <option key={wt.path} value={wt.path}>{wt.branch ?? getFileName(wt.path)}</option>
-                        ))}
-                      </select>
-                      <ChevronDown className="new-session-workspace-chevron" size={16} strokeWidth={1.8} aria-hidden="true" />
-                    </div>
-                  )}
-                  <div id="new-session-workspace-path" className="new-session-workspace-path" title={effectiveNewSessionCwd}>
-                    {effectiveNewSessionCwd}
-                  </div>
+                        options={worktreeCtx.worktrees.map((wt) => ({ value: wt.path, label: wt.branch ?? getFileName(wt.path), description: wt.path }))}
+                        onChange={(path) => worktreeCtx.select(path)} />
+                    )}
                 </div>
               )}
               onAgentEnd={handleAgentEnd}

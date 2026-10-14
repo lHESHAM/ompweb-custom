@@ -1,7 +1,9 @@
 "use client";
 
+import { PolishedSelect } from "./ui/PolishedSelect";
+
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
-import { AlertCircle, ChevronDown, Loader2, RefreshCw } from "lucide-react";
+import { AlertCircle, Loader2, RefreshCw } from "lucide-react";
 import { useI18n } from "@/lib/i18n";
 import type {
   UsageBreakdownView,
@@ -380,10 +382,10 @@ export function UsageConfig() {
 
           {/* Time Range Selector */}
           <div style={{ position: "relative", display: "inline-flex", alignItems: "center" }}>
-            <select
+            <PolishedSelect
               value={timeRange}
               aria-label={t("usageConfig.timeRange")}
-              onChange={(e) => setTimeRange(e.target.value as UsageTimeRange)}
+              onValueChange={(nextValue) => setTimeRange(nextValue as UsageTimeRange)}
               style={{
                 appearance: "none",
                 padding: "5px 28px 5px 10px",
@@ -401,16 +403,7 @@ export function UsageConfig() {
               <option value="90d">{t("usageConfig.range90d")}</option>
               <option value="month">{t("usageConfig.rangeMonth")}</option>
               <option value="all">{t("usageConfig.rangeAll")}</option>
-            </select>
-            <ChevronDown
-              size={14}
-              style={{
-                position: "absolute",
-                right: 8,
-                pointerEvents: "none",
-                color: "var(--text-dim)",
-              }}
-            />
+            </PolishedSelect>
           </div>
 
           {/* Refresh button */}

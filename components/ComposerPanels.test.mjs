@@ -246,3 +246,27 @@ test("a side question keeps Copy for the earlier answer when its follow-up ended
   assert.match(html, /Cancelled/);
   assert.match(html, />Copy answer</);
 });
+
+
+test("task activity has one stable slot in the collapsed header across agent phases", async () => {
+  const { JSDOM } = await import("jsdom");
+  const todoPhases = [{ name: "Verify contracts and sources", tasks: [{ content: "Check contracts", status: "in_progress" }] }];
+  for (const activityText of ["Waiting for model… · Verify contracts and sources", "Running bash · Verify contracts and sources", "Thinking… · Verify contracts and sources", null]) {
+    const html = renderToStaticMarkup(React.createElement(ComposerPanels, { todoPhases, activityText, subagents: [], onSelectSubagent: noop }));
+    const dom = new JSDOM(html);
+    const header = dom.window.document.querySelector('button[aria-expanded="false"]');
+    assert.ok(header, "task header remains collapsed and present");
+    assert.equal(dom.window.document.querySelectorAll('[role="status"]').length, 1, "live activity is not duplicated into separate rows");
+    const slot = header.querySelector('.todo-live-status');
+    assert.ok(slot, "status slot remains mounted when the agent settles");
+    assert.ok(header.textContent.includes("0/1 complete"), "task progress remains visible");
+    if (activityText) {
+      assert.equal(slot.textContent, activityText);
+      assert.equal(slot.getAttribute("aria-hidden"), "false");
+    } else {
+      assert.equal(slot.style.visibility, "hidden");
+      assert.equal(slot.getAttribute("aria-hidden"), "true");
+    }
+    dom.window.close();
+  }
+});
